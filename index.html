@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chess Game</title>
+    <style>
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        height: 100vh;
+        margin: 0;
+        background-color: #f0d9b5;
+        padding: 20px;
+        gap: 20px;
+      }
+      #chessboard {
+        display: grid;
+        grid-template-columns: repeat(8, 60px);
+        grid-template-rows: repeat(8, 60px);
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+      }
+      #history {
+        width: 200px;
+        max-height: 480px;
+        overflow-y: auto;
+        background-color: #f0d9b5;
+        padding: 10px;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      }
+      #history h2 {
+        margin-top: 0;
+      }
+      .square {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 36px;
+        cursor: pointer;
+      }
+      .square.valid {
+        background-color: rgba(0, 255, 0, 0.3);
+      }
+      .square.selected {
+        background-color: rgba(0, 0, 255, 0.3);
+      }
+      .light {
+        background-color: #f0d9b5;
+      }
+      .dark {
+        background-color: #b58863;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="chessboard"></div>
+    <div id="history">
+      <h2>Historial</h2>
+      <ul id="historyList"></ul>
+    </div>
+
+    <script>
+      const historyList = document.getElementById("historyList");
+
+      function addMoveToHistory(fromX, fromY, toX, toY, piece) {
+        const moveText = `${pieceToUnicode(piece)}: (${fromX + 1}, ${
+          8 - fromY
+        }) → (${toX + 1}, ${8 - toY})`;
+        const listItem = document.createElement("li");
+        listItem.textContent = moveText;
+        historyList.appendChild(listItem);
+        historyList.scrollTop = historyList.scrollHeight; // Auto scroll
+      }
+
+      const initialFEN =
+        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+      let board = [];
+      let selectedPiece = null;
+      let validMoves = [];
+      let turn = "white";
+
+      function parseFEN(fen) {
+        const rows = fen.split(" ")[0].split("/");
+        return rows.map((row) => {
+          const rowPieces = [];
+          for (const char of row) {
+            if (isNaN(char)) {
+              rowPieces.push(char);
+            } else {
+              rowPieces.push(...Array(parseInt(char)).fill(null));
+            }
+          }
+          return rowPieces;
+        });
+      }
+
+      function renderBoard() {
+        const chessboard = document.getElementById("chessboard");
+        chessboard.innerHTML = "";
+        board.forEach((row, y) => {
+          row.forEach((piece, x) => {
+            const square = document.createElement("div");
+            square.className = `square ${(x + y) % 2 === 0 ? "light" : "dark"}`;
+            if (validMoves.some((move) => move.x === x && move.y === y)) {
+              square.classList.add("valid");
+            }
+            if (
+              selectedPiece &&
+              selectedPiece.x === x &&
+              selectedPiece.y === y
+            ) {
+              square.classList.add("selected");
+            }
+            if (piece) {
+              square.textContent = pieceToUnicode(piece);
+            }
+            square.addEventListener("click", () => handleSquareClick(x, y));
+            chessboard.appendChild(square);
+          });
+        });
+      }
+
+      function pieceToUnicode(piece) {
+        const unicode = {
+          K: "♔",
+          Q: "♕",
+          R: "♖",
+          B: "♗",
+          N: "♘",
+          P: "♙",
+          k: "♚",
+          q: "♛",
+          r: "♜",
+          b: "♝",
+          n: "♞",
+          p: "♟",
+        };
+        return unicode[piece] || "";
+      }
+
+      function getValidMoves(piece, x, y) {
+        const color = piece === piece.toUpperCase() ? "white" : "black";
+        const moves = [];
+
+        switch (piece.toLowerCase()) {
+          case "p":
+            moves.push(...getPawnMoves(color, x, y));
+            break;
+          case "r":
+            moves.push(...getRookMoves(color, x, y));
+            break;
+          case "n":
+            moves.push(...getKnightMoves(color, x, y));
+            break;
+          case "b":
+            moves.push(...getBishopMoves(color, x, y));
+            break;
+          case "q":
+            moves.push(...getQueenMoves(color, x, y));
+            break;
+          case "k":
+            moves.push(...getKingMoves(color, x, y));
+            break;
+        }
+
+        return moves.filter(
+          (move) => move.x >= 0 && move.x < 8 && move.y >= 0 && move.y < 8
+        );
+      }
+
+      function getPawnMoves(color, x, y) {
+        const direction = color === "white" ? -1 : 1;
+        const moves = [];
+        const step = y + direction;
+        if (step >= 0 && step < 8 && !board[step][x]) {
+          moves.push({ x, y: step });
+          if (
+            (color === "white" && y === 6) ||
+            (color === "black" && y === 1)
+          ) {
+            if (!board[step + direction]?.[x]) {
+              moves.push({ x, y: step + direction });
+            }
+          }
+        }
+        [-1, 1].forEach((offset) => {
+          const captureX = x + offset;
+          const captureY = y + direction;
+          if (captureX >= 0 && captureX < 8 && captureY >= 0 && captureY < 8) {
+            const target = board[captureY][captureX];
+            if (
+              target &&
+              (color === "white") === (target === target.toLowerCase())
+            ) {
+              moves.push({ x: captureX, y: captureY });
+            }
+          }
+        });
+        return moves;
+      }
+
+      function getRookMoves(color, x, y) {
+        return [
+          ...getStraightMoves(color, x, y, 1, 0),
+          ...getStraightMoves(color, x, y, -1, 0),
+          ...getStraightMoves(color, x, y, 0, 1),
+          ...getStraightMoves(color, x, y, 0, -1),
+        ];
+      }
+
+      function getStraightMoves(color, x, y, dx, dy) {
+        const moves = [];
+        let currentX = x + dx;
+        let currentY = y + dy;
+        while (currentX >= 0 && currentX < 8 && currentY >= 0 && currentY < 8) {
+          const target = board[currentY][currentX];
+          if (!target) {
+            moves.push({ x: currentX, y: currentY });
+          } else {
+            if ((color === "white") === (target === target.toLowerCase())) {
+              moves.push({ x: currentX, y: currentY });
+            }
+            break;
+          }
+          currentX += dx;
+          currentY += dy;
+        }
+        return moves;
+      }
+
+      function getKnightMoves(color, x, y) {
+        const moves = [];
+        const directions = [
+          [1, 2],
+          [2, 1],
+          [-1, 2],
+          [2, -1],
+          [1, -2],
+          [-2, 1],
+          [-1, -2],
+          [-2, -1],
+        ];
+        directions.forEach(([dx, dy]) => {
+          const newX = x + dx;
+          const newY = y + dy;
+          if (newX >= 0 && newX < 8 && newY >= 0 && newY < 8) {
+            const target = board[newY][newX];
+            if (
+              !target ||
+              (color === "white") === (target === target.toLowerCase())
+            ) {
+              moves.push({ x: newX, y: newY });
+            }
+          }
+        });
+        return moves;
+      }
+
+      function getBishopMoves(color, x, y) {
+        return [
+          ...getDiagonalMoves(color, x, y, 1, 1),
+          ...getDiagonalMoves(color, x, y, 1, -1),
+          ...getDiagonalMoves(color, x, y, -1, 1),
+          ...getDiagonalMoves(color, x, y, -1, -1),
+        ];
+      }
+
+      function getDiagonalMoves(color, x, y, dx, dy) {
+        const moves = [];
+        let currentX = x + dx;
+        let currentY = y + dy;
+        while (currentX >= 0 && currentX < 8 && currentY >= 0 && currentY < 8) {
+          const target = board[currentY][currentX];
+          if (!target) {
+            moves.push({ x: currentX, y: currentY });
+          } else {
+            if ((color === "white") === (target === target.toLowerCase())) {
+              moves.push({ x: currentX, y: currentY });
+            }
+            break;
+          }
+          currentX += dx;
+          currentY += dy;
+        }
+        return moves;
+      }
+
+      function getQueenMoves(color, x, y) {
+        return [...getRookMoves(color, x, y), ...getBishopMoves(color, x, y)];
+      }
+
+      function getKingMoves(color, x, y) {
+        const moves = [];
+        const directions = [
+          [1, 0],
+          [-1, 0],
+          [0, 1],
+          [0, -1],
+          [1, 1],
+          [1, -1],
+          [-1, 1],
+          [-1, -1],
+        ];
+        directions.forEach(([dx, dy]) => {
+          const newX = x + dx;
+          const newY = y + dy;
+          if (newX >= 0 && newX < 8 && newY >= 0 && newY < 8) {
+            const target = board[newY][newX];
+            if (
+              !target ||
+              (color === "white") === (target === target.toLowerCase())
+            ) {
+              moves.push({ x: newX, y: newY });
+            }
+          }
+        });
+        return moves;
+      }
+
+      function checkPromotion(x, y) {
+        const piece = board[y][x];
+        if (piece === "P" && y === 0) {
+          board[y][x] = "Q"; // Promociona peón blanco a reina
+        } else if (piece === "p" && y === 7) {
+          board[y][x] = "q"; // Promociona peón negro a reina
+        }
+      }
+
+      function handleSquareClick(x, y) {
+        const piece = board[y][x];
+
+        if (selectedPiece) {
+          const isMoveValid = validMoves.some(
+            (move) => move.x === x && move.y === y
+          );
+
+          if (isMoveValid) {
+            const fromX = selectedPiece.x;
+            const fromY = selectedPiece.y;
+            const movingPiece = board[fromY][fromX];
+
+            // Registrar el movimiento en el historial
+            addMoveToHistory(fromX, fromY, x, y, movingPiece);
+
+            // Verificamos si la pieza capturada es un rey
+            if (board[y][x] && board[y][x].toLowerCase() === "k") {
+              alert(`${turn === "white" ? "Black" : "White"} wins!`);
+              location.reload(); // Recarga la página para reiniciar
+              return;
+            }
+
+            board[y][x] = movingPiece;
+            board[fromY][fromX] = null;
+
+            // Promoción de peón
+            if (
+              (movingPiece === "P" && y === 0) ||
+              (movingPiece === "p" && y === 7)
+            ) {
+              board[y][x] = movingPiece === "P" ? "Q" : "q";
+            }
+
+            selectedPiece = null;
+            validMoves = [];
+            turn = turn === "white" ? "black" : "white";
+          } else {
+            selectedPiece = null;
+            validMoves = [];
+          }
+        } else if (
+          piece &&
+          (turn === "white") === (piece === piece.toUpperCase())
+        ) {
+          selectedPiece = { x, y };
+          validMoves = getValidMoves(piece, x, y);
+        }
+
+        renderBoard();
+      }
+
+      function resetGame() {
+        board = parseFEN(initialFEN);
+        selectedPiece = null;
+        validMoves = [];
+        turn = "white";
+        renderBoard();
+      }
+
+      board = parseFEN(initialFEN);
+      renderBoard();
+    </script>
+  </body>
+</html>
