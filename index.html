@@ -3,338 +3,581 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Ajuste de la visualización para que sea responsive y se adapte a dispositivos móviles -->
     <title>Chess Game</title>
     <style>
+      /* Estilo general para el cuerpo de la página */
       body {
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-        height: 100vh;
-        margin: 0;
-        background-color: #f0d9b5;
-        padding: 20px;
-        gap: 20px;
+        display: flex; /* Utiliza Flexbox para distribuir los elementos principales */
+        justify-content: center; /* Centra horizontalmente el contenido */
+        align-items: flex-start; /* Alinea los elementos al inicio del eje vertical */
+        height: 100vh; /* Ocupa toda la altura visible de la ventana del navegador */
+        margin: 0; /* Elimina márgenes predeterminados del navegador */
+        background-color: #f0d9b5; /* Color de fondo similar al de un tablero de ajedrez */
+        padding: 20px; /* Espaciado interno alrededor del contenido */
+        gap: 20px; /* Espacio entre los elementos hijos del body */
       }
+
+      /* Estilo para el tablero de ajedrez */
       #chessboard {
-        display: grid;
-        grid-template-columns: repeat(8, 60px);
-        grid-template-rows: repeat(8, 60px);
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        display: grid; /* Usa Grid Layout para organizar las casillas */
+        grid-template-columns: repeat(
+          8,
+          60px
+        ); /* Crea 8 columnas de 60px cada una */
+        grid-template-rows: repeat(8, 60px); /* Crea 8 filas de 60px cada una */
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Añade una sombra alrededor del tablero para darle relieve */
       }
+
+      /* Estilo para el contenedor del historial de movimientos */
       #history {
-        width: 200px;
-        max-height: 480px;
-        overflow-y: auto;
-        background-color: #f0d9b5;
-        padding: 10px;
-        font-family: Arial, sans-serif;
-        font-size: 14px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        width: 200px; /* Ancho fijo del historial */
+        max-height: 480px; /* Altura máxima del historial antes de activar scroll */
+        overflow-y: auto; /* Habilita el scroll vertical si se excede la altura */
+        background-color: #f0d9b5; /* Color de fondo a juego con el tablero */
+        padding: 10px; /* Espaciado interno */
+        font-family: Arial, sans-serif; /* Fuente del texto */
+        font-size: 14px; /* Tamaño del texto */
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); /* Sombra suave para darle efecto de elevación */
       }
+
+      /* Estilo específico para el título del historial */
       #history h2 {
-        margin-top: 0;
+        margin-top: 0; /* Elimina el margen superior para que esté pegado al borde superior */
       }
+
+      /* Estilo para cada casilla del tablero */
       .square {
-        width: 60px;
-        height: 60px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-size: 36px;
-        cursor: pointer;
+        width: 60px; /* Ancho fijo de cada casilla */
+        height: 60px; /* Altura fija de cada casilla */
+        display: flex; /* Flexbox para centrar el contenido */
+        justify-content: center; /* Centrado horizontal del contenido (pieza de ajedrez) */
+        align-items: center; /* Centrado vertical del contenido */
+        font-size: 36px; /* Tamaño de fuente grande para las piezas (probablemente emojis o caracteres) */
+        cursor: pointer; /* Cambia el cursor para indicar que se puede interactuar */
       }
+
+      /* Estilo para casillas que son movimientos válidos */
       .square.valid {
-        background-color: rgba(0, 255, 0, 0.3);
+        background-color: rgba(
+          0,
+          255,
+          0,
+          0.3
+        ); /* Verde translúcido para indicar posibilidad de movimiento */
       }
+
+      /* Estilo para casilla seleccionada */
       .square.selected {
-        background-color: rgba(0, 0, 255, 0.3);
+        background-color: rgba(
+          0,
+          0,
+          255,
+          0.3
+        ); /* Azul translúcido para indicar selección */
       }
+
+      /* Estilo para casillas claras del tablero */
       .light {
-        background-color: #f0d9b5;
+        background-color: #f0d9b5; /* Color claro típico de un tablero de ajedrez */
       }
+
+      /* Estilo para casillas oscuras del tablero */
       .dark {
-        background-color: #b58863;
+        background-color: #b58863; /* Color oscuro típico de un tablero de ajedrez */
       }
     </style>
   </head>
   <body>
+    <!-- Contenedor principal del tablero de ajedrez -->
     <div id="chessboard"></div>
+
+    <!-- Contenedor del historial de movimientos -->
     <div id="history">
       <h2>Historial</h2>
+      <!-- Título del historial -->
       <ul id="historyList"></ul>
+      <!-- Lista donde se añadirán los movimientos realizados -->
     </div>
 
+    <!-- Bloque de JavaScript para la lógica del juego -->
     <script>
+      // Obtiene el elemento UL donde se mostrarán los movimientos históricos
       const historyList = document.getElementById("historyList");
 
+      /**
+       * Función para añadir un movimiento al historial.
+       * Recibe las coordenadas de origen y destino y la pieza que se movió.
+       */
       function addMoveToHistory(fromX, fromY, toX, toY, piece) {
+        // Genera el texto del movimiento incluyendo la pieza y coordenadas humanas (ajustadas a 1-8)
         const moveText = `${pieceToUnicode(piece)}: (${fromX + 1}, ${
           8 - fromY
         }) → (${toX + 1}, ${8 - toY})`;
+
+        // Crea un nuevo elemento <li> para el historial
         const listItem = document.createElement("li");
+
+        // Establece el texto generado como contenido del <li>
         listItem.textContent = moveText;
+
+        // Añade el elemento <li> al historial visual
         historyList.appendChild(listItem);
-        historyList.scrollTop = historyList.scrollHeight; // Auto scroll
+
+        // Desplaza automáticamente el historial hacia abajo para ver el último movimiento
+        historyList.scrollTop = historyList.scrollHeight;
       }
 
-      const initialFEN =
-        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-      let board = [];
-      let selectedPiece = null;
-      let validMoves = [];
-      let turn = "white";
+      // Definición de la posición inicial del tablero usando notación FEN (Forsyth-Edwards Notation)
+      const initialFEN =  "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
+      let board = []; // Matriz que representará el estado actual del tablero
+      let selectedPiece = null; // Almacena la pieza actualmente seleccionada por el usuario
+      let validMoves = []; // Arreglo para los movimientos válidos de la pieza seleccionada
+      let turn = "white"; // Controla el turno, alternando entre "white" y "black"
+
+      /**
+       * Función que interpreta una cadena FEN y genera una matriz bidimensional del tablero.
+       * Cada fila del tablero se obtiene dividiendo la FEN y procesando cada carácter.
+       */
       function parseFEN(fen) {
+        // Separa la FEN por espacios y toma la primera parte (la configuración del tablero)
         const rows = fen.split(" ")[0].split("/");
+
+        // Mapea cada fila de la FEN a un arreglo de piezas y espacios vacíos
         return rows.map((row) => {
           const rowPieces = [];
           for (const char of row) {
             if (isNaN(char)) {
+              // Si el carácter no es un número, es una pieza (por ejemplo, 'r', 'n', 'b', etc.)
               rowPieces.push(char);
             } else {
+              // Si es un número, indica cantidad de espacios vacíos en esa fila
               rowPieces.push(...Array(parseInt(char)).fill(null));
             }
           }
-          return rowPieces;
+          return rowPieces; // Devuelve la fila completa procesada
         });
       }
 
+      /**
+       * Función para renderizar (dibujar) el tablero de ajedrez en la página.
+       * Recorre la matriz 'board' y crea dinámicamente los cuadrados y piezas.
+       */
       function renderBoard() {
+        // Obtiene el elemento del DOM que representa el tablero de ajedrez
         const chessboard = document.getElementById("chessboard");
+
+        // Limpia el contenido del tablero para volver a dibujarlo desde cero
         chessboard.innerHTML = "";
+
+        // Recorre cada fila (row) del tablero junto con su índice vertical (y)
         board.forEach((row, y) => {
+          // Recorre cada celda (piece) de la fila junto con su índice horizontal (x)
           row.forEach((piece, x) => {
+            // Crea un div que representará una casilla del tablero
             const square = document.createElement("div");
+
+            // Asigna clases para definir si la casilla es clara o oscura según su posición
             square.className = `square ${(x + y) % 2 === 0 ? "light" : "dark"}`;
+
+            // Verifica si la casilla actual (x, y) es un movimiento válido para la pieza seleccionada
             if (validMoves.some((move) => move.x === x && move.y === y)) {
-              square.classList.add("valid");
+              square.classList.add("valid"); // Resalta la casilla como válida
             }
+
+            // Verifica si la casilla actual corresponde a la pieza seleccionada
             if (
               selectedPiece &&
               selectedPiece.x === x &&
               selectedPiece.y === y
             ) {
-              square.classList.add("selected");
+              square.classList.add("selected"); // Resalta la casilla como seleccionada
             }
+
+            // Si hay una pieza en esta casilla, se añade su representación Unicode
             if (piece) {
-              square.textContent = pieceToUnicode(piece);
+              square.textContent = pieceToUnicode(piece); // Convierte la pieza al símbolo correspondiente
             }
+
+            // Añade un evento de clic a la casilla para gestionar la interacción del usuario
             square.addEventListener("click", () => handleSquareClick(x, y));
+
+            // Añade la casilla ya configurada al tablero del DOM
             chessboard.appendChild(square);
           });
         });
       }
 
+      /**
+       * Convierte un carácter que representa una pieza de ajedrez (según FEN)
+       * en su equivalente visual en Unicode para mostrarlo en el tablero.
+       * @param {string} piece - Letra que representa la pieza (mayúsculas para blancas, minúsculas para negras).
+       * @returns {string} Símbolo Unicode de la pieza o una cadena vacía si no hay pieza.
+       */
       function pieceToUnicode(piece) {
+        // Diccionario que relaciona cada pieza con su símbolo Unicode
         const unicode = {
-          K: "♔",
-          Q: "♕",
-          R: "♖",
-          B: "♗",
-          N: "♘",
-          P: "♙",
-          k: "♚",
-          q: "♛",
-          r: "♜",
-          b: "♝",
-          n: "♞",
-          p: "♟",
+          K: "♔", // Rey blanco
+          Q: "♕", // Reina blanca
+          R: "♖", // Torre blanca
+          B: "♗", // Alfil blanco
+          N: "♘", // Caballo blanco
+          P: "♙", // Peón blanco
+          k: "♚", // Rey negro
+          q: "♛", // Reina negra
+          r: "♜", // Torre negra
+          b: "♝", // Alfil negro
+          n: "♞", // Caballo negro
+          p: "♟", // Peón negro
         };
+        // Devuelve el símbolo Unicode correspondiente o una cadena vacía si no existe
         return unicode[piece] || "";
       }
 
+      /**
+       * Obtiene todos los movimientos válidos para una pieza específica
+       * teniendo en cuenta su tipo y posición actual.
+       * @param {string} piece - Letra que representa la pieza (mayúsculas para blancas, minúsculas para negras).
+       * @param {number} x - Posición horizontal de la pieza en el tablero (columna).
+       * @param {number} y - Posición vertical de la pieza en el tablero (fila).
+       * @returns {Array} Lista de objetos con coordenadas de movimientos válidos ({x, y}).
+       */
       function getValidMoves(piece, x, y) {
+        // Determina el color de la pieza:
+        // Si es mayúscula es blanca ("white"), si es minúscula es negra ("black")
         const color = piece === piece.toUpperCase() ? "white" : "black";
+
+        // Array para almacenar los movimientos válidos
         const moves = [];
 
+        // Usa un switch para decidir qué función de movimientos llamar según la pieza
         switch (piece.toLowerCase()) {
-          case "p":
+          case "p": // Peón
             moves.push(...getPawnMoves(color, x, y));
             break;
-          case "r":
+          case "r": // Torre
             moves.push(...getRookMoves(color, x, y));
             break;
-          case "n":
+          case "n": // Caballo
             moves.push(...getKnightMoves(color, x, y));
             break;
-          case "b":
+          case "b": // Alfil
             moves.push(...getBishopMoves(color, x, y));
             break;
-          case "q":
+          case "q": // Reina
             moves.push(...getQueenMoves(color, x, y));
             break;
-          case "k":
+          case "k": // Rey
             moves.push(...getKingMoves(color, x, y));
             break;
         }
 
+        // Filtra los movimientos para asegurarse de que están dentro del tablero (8x8)
         return moves.filter(
           (move) => move.x >= 0 && move.x < 8 && move.y >= 0 && move.y < 8
         );
       }
 
+      /**
+       * Calcula los movimientos válidos de un peón según su color y posición actual.
+       * @param {string} color - "white" para blanco, "black" para negro.
+       * @param {number} x - Posición horizontal del peón (columna).
+       * @param {number} y - Posición vertical del peón (fila).
+       * @returns {Array} Lista de movimientos válidos en formato {x, y}.
+       */
       function getPawnMoves(color, x, y) {
+        // Definir la dirección del movimiento del peón:
+        // Blancos avanzan hacia arriba (-1), negros hacia abajo (+1).
         const direction = color === "white" ? -1 : 1;
-        const moves = [];
+
+        const moves = []; // Aquí se guardarán los movimientos posibles.
+
+        // Movimiento simple de 1 casilla hacia adelante
         const step = y + direction;
         if (step >= 0 && step < 8 && !board[step][x]) {
           moves.push({ x, y: step });
+
+          // Si el peón está en su fila inicial, puede mover 2 casillas hacia adelante
           if (
-            (color === "white" && y === 6) ||
-            (color === "black" && y === 1)
+            (color === "white" && y === 6) || // Fila inicial de los blancos
+            (color === "black" && y === 1) // Fila inicial de los negros
           ) {
+            // Comprobamos que también esté libre la segunda casilla hacia adelante
             if (!board[step + direction]?.[x]) {
               moves.push({ x, y: step + direction });
             }
           }
         }
+
+        // Capturas diagonales (izquierda y derecha)
         [-1, 1].forEach((offset) => {
-          const captureX = x + offset;
-          const captureY = y + direction;
+          const captureX = x + offset; // Posición horizontal de la captura
+          const captureY = y + direction; // Posición vertical de la captura
+
+          // Validar que la captura está dentro del tablero
           if (captureX >= 0 && captureX < 8 && captureY >= 0 && captureY < 8) {
-            const target = board[captureY][captureX];
+            const target = board[captureY][captureX]; // Pieza que está en la casilla de captura
+
+            // Si hay una pieza y es del color contrario, la captura es válida
             if (
               target &&
               (color === "white") === (target === target.toLowerCase())
+              // Blancas capturan piezas minúsculas (negras)
+              // Negras capturan piezas mayúsculas (blancas)
             ) {
               moves.push({ x: captureX, y: captureY });
             }
           }
         });
-        return moves;
+
+        return moves; // Devolvemos todos los movimientos válidos del peón.
       }
 
+      /**
+       * Calcula los movimientos válidos de una torre (rook).
+       * La torre se mueve en líneas rectas horizontales y verticales.
+       * @param {string} color - "white" o "black".
+       * @param {number} x - Posición horizontal actual.
+       * @param {number} y - Posición vertical actual.
+       * @returns {Array} Lista de movimientos válidos en formato {x, y}.
+       */
       function getRookMoves(color, x, y) {
         return [
-          ...getStraightMoves(color, x, y, 1, 0),
-          ...getStraightMoves(color, x, y, -1, 0),
-          ...getStraightMoves(color, x, y, 0, 1),
-          ...getStraightMoves(color, x, y, 0, -1),
+          ...getStraightMoves(color, x, y, 1, 0), // Derecha
+          ...getStraightMoves(color, x, y, -1, 0), // Izquierda
+          ...getStraightMoves(color, x, y, 0, 1), // Abajo
+          ...getStraightMoves(color, x, y, 0, -1), // Arriba
         ];
       }
 
+      /**
+       * Calcula los movimientos rectos de una pieza (torre, reina).
+       * Explora una dirección específica (definida por dx y dy) hasta que encuentra
+       * una pieza o llega al borde del tablero.
+       * @param {string} color - Color de la pieza que se mueve.
+       * @param {number} x - Posición horizontal actual.
+       * @param {number} y - Posición vertical actual.
+       * @param {number} dx - Incremento horizontal por paso (dirección).
+       * @param {number} dy - Incremento vertical por paso (dirección).
+       * @returns {Array} Lista de movimientos válidos en formato {x, y}.
+       */
       function getStraightMoves(color, x, y, dx, dy) {
         const moves = [];
         let currentX = x + dx;
         let currentY = y + dy;
+
+        // Sigue avanzando en la dirección indicada mientras esté dentro del tablero
         while (currentX >= 0 && currentX < 8 && currentY >= 0 && currentY < 8) {
           const target = board[currentY][currentX];
+
           if (!target) {
+            // Si la casilla está vacía, es un movimiento válido
             moves.push({ x: currentX, y: currentY });
           } else {
+            // Si hay una pieza, verificamos si es del color contrario
             if ((color === "white") === (target === target.toLowerCase())) {
+              // Es del color contrario, se puede capturar
               moves.push({ x: currentX, y: currentY });
             }
+            // Si encontramos una pieza (aliada o enemiga), detenemos la exploración
             break;
           }
+
+          // Avanzamos a la siguiente casilla en la misma dirección
           currentX += dx;
           currentY += dy;
         }
-        return moves;
+
+        return moves; // Retornamos los movimientos posibles en esa dirección
       }
 
+      /**
+       * Calcula los movimientos válidos de un caballo (knight).
+       * El caballo tiene un patrón de movimiento en "L" y puede saltar sobre otras piezas.
+       * @param {string} color - "white" o "black".
+       * @param {number} x - Posición horizontal actual.
+       * @param {number} y - Posición vertical actual.
+       * @returns {Array} Lista de movimientos válidos en formato {x, y}.
+       */
       function getKnightMoves(color, x, y) {
         const moves = [];
+        // Definir las 8 direcciones posibles para el movimiento en "L" del caballo
         const directions = [
-          [1, 2],
-          [2, 1],
-          [-1, 2],
-          [2, -1],
-          [1, -2],
-          [-2, 1],
-          [-1, -2],
-          [-2, -1],
+          [1, 2], // Movimiento 1: 1 casilla a la derecha y 2 hacia abajo
+          [2, 1], // Movimiento 2: 2 casillas a la derecha y 1 hacia abajo
+          [-1, 2], // Movimiento 3: 1 casilla a la izquierda y 2 hacia abajo
+          [2, -1], // Movimiento 4: 2 casillas a la derecha y 1 hacia arriba
+          [1, -2], // Movimiento 5: 1 casilla a la derecha y 2 hacia arriba
+          [-2, 1], // Movimiento 6: 2 casillas a la izquierda y 1 hacia abajo
+          [-1, -2], // Movimiento 7: 1 casilla a la izquierda y 2 hacia arriba
+          [-2, -1], // Movimiento 8: 2 casillas a la izquierda y 1 hacia arriba
         ];
+
+        // Iterar sobre las direcciones posibles para comprobar cada movimiento
         directions.forEach(([dx, dy]) => {
-          const newX = x + dx;
-          const newY = y + dy;
+          const newX = x + dx; // Calculamos la nueva posición en X
+          const newY = y + dy; // Calculamos la nueva posición en Y
+
+          // Comprobamos si la nueva posición está dentro de los límites del tablero
           if (newX >= 0 && newX < 8 && newY >= 0 && newY < 8) {
-            const target = board[newY][newX];
+            const target = board[newY][newX]; // Obtenemos la pieza en la nueva casilla
+
+            // Si no hay pieza o la pieza es del color contrario (color contrario es capturable)
             if (
               !target ||
               (color === "white") === (target === target.toLowerCase())
             ) {
-              moves.push({ x: newX, y: newY });
+              moves.push({ x: newX, y: newY }); // Agregamos el movimiento como válido
             }
           }
         });
-        return moves;
+
+        return moves; // Devolvemos la lista de movimientos válidos
       }
 
+      /**
+       * Calcula los movimientos válidos de un alfil (bishop).
+       * El alfil se mueve a lo largo de las diagonales del tablero.
+       * @param {string} color - "white" o "black".
+       * @param {number} x - Posición horizontal actual.
+       * @param {number} y - Posición vertical actual.
+       * @returns {Array} Lista de movimientos válidos en formato {x, y}.
+       */
       function getBishopMoves(color, x, y) {
+        // El alfil se mueve en cuatro direcciones diagonales:
+        // superior derecha, inferior derecha, superior izquierda, e inferior izquierda
         return [
-          ...getDiagonalMoves(color, x, y, 1, 1),
-          ...getDiagonalMoves(color, x, y, 1, -1),
-          ...getDiagonalMoves(color, x, y, -1, 1),
-          ...getDiagonalMoves(color, x, y, -1, -1),
+          // Llamadas a la función getDiagonalMoves para cada una de las cuatro diagonales
+          ...getDiagonalMoves(color, x, y, 1, 1), // Diagonal superior derecha
+          ...getDiagonalMoves(color, x, y, 1, -1), // Diagonal inferior derecha
+          ...getDiagonalMoves(color, x, y, -1, 1), // Diagonal superior izquierda
+          ...getDiagonalMoves(color, x, y, -1, -1), // Diagonal inferior izquierda
         ];
       }
 
+      /**
+       * Calcula los movimientos diagonales válidos para piezas como el alfil.
+       * Recorre una dirección diagonal mientras haya espacios vacíos o piezas del color contrario.
+       * @param {string} color - "white" o "black".
+       * @param {number} x - Posición horizontal actual.
+       * @param {number} y - Posición vertical actual.
+       * @param {number} dx - Cambio en la dirección horizontal (x) por cada paso.
+       * @param {number} dy - Cambio en la dirección vertical (y) por cada paso.
+       * @returns {Array} Lista de movimientos válidos en formato {x, y}.
+       */
       function getDiagonalMoves(color, x, y, dx, dy) {
         const moves = [];
+
+        // Inicializamos las variables currentX y currentY con la posición de inicio, ajustadas por dx y dy.
         let currentX = x + dx;
         let currentY = y + dy;
+
+        // Recorre la diagonal mientras se encuentre dentro de los límites del tablero (0 a 7)
         while (currentX >= 0 && currentX < 8 && currentY >= 0 && currentY < 8) {
+          // Se obtiene el contenido de la casilla objetivo
           const target = board[currentY][currentX];
+
+          // Si la casilla está vacía, se agrega como un movimiento válido.
           if (!target) {
             moves.push({ x: currentX, y: currentY });
           } else {
+            // Si la casilla contiene una pieza, verifica si la pieza es del color contrario.
             if ((color === "white") === (target === target.toLowerCase())) {
+              // Si la pieza es del color contrario, se puede capturar, así que se agrega al listado de movimientos válidos.
               moves.push({ x: currentX, y: currentY });
             }
+            // Si hay una pieza (propia o contraria), terminamos de recorrer la diagonal, no avanzamos más.
             break;
           }
+
+          // Avanzamos una casilla en la misma dirección de la diagonal.
           currentX += dx;
           currentY += dy;
         }
+
+        // Devolvemos la lista de movimientos válidos.
         return moves;
       }
 
+      /**
+       * Calcula los movimientos válidos de la reina (torre + alfil) en el tablero.
+       * La reina puede moverse en cualquier dirección: horizontal, vertical y diagonal.
+       * @param {string} color - "white" o "black".
+       * @param {number} x - Posición horizontal actual de la reina.
+       * @param {number} y - Posición vertical actual de la reina.
+       * @returns {Array} Lista de movimientos válidos en formato {x, y}.
+       */
       function getQueenMoves(color, x, y) {
+        // La reina puede moverse como una torre o un alfil, por lo que combinamos ambos movimientos.
         return [...getRookMoves(color, x, y), ...getBishopMoves(color, x, y)];
       }
 
+      /**
+       * Calcula los movimientos válidos del rey en el tablero.
+       * El rey puede moverse en cualquier dirección, pero solo una casilla a la vez.
+       * @param {string} color - "white" o "black".
+       * @param {number} x - Posición horizontal actual del rey.
+       * @param {number} y - Posición vertical actual del rey.
+       * @returns {Array} Lista de movimientos válidos en formato {x, y}.
+       */
       function getKingMoves(color, x, y) {
         const moves = [];
+        // Definimos las direcciones en las que el rey puede moverse
         const directions = [
-          [1, 0],
-          [-1, 0],
-          [0, 1],
-          [0, -1],
-          [1, 1],
-          [1, -1],
-          [-1, 1],
-          [-1, -1],
+          [1, 0], // derecha
+          [-1, 0], // izquierda
+          [0, 1], // arriba
+          [0, -1], // abajo
+          [1, 1], // diagonal derecha-arriba
+          [1, -1], // diagonal derecha-abajo
+          [-1, 1], // diagonal izquierda-arriba
+          [-1, -1], // diagonal izquierda-abajo
         ];
+
+        // Recorremos las direcciones y verificamos si el movimiento es válido
         directions.forEach(([dx, dy]) => {
           const newX = x + dx;
           const newY = y + dy;
           if (newX >= 0 && newX < 8 && newY >= 0 && newY < 8) {
             const target = board[newY][newX];
             if (
-              !target ||
-              (color === "white") === (target === target.toLowerCase())
+              !target || // Casilla vacía
+              (color === "white") === (target === target.toLowerCase()) // El rey no puede moverse a una casilla de su propio color
             ) {
               moves.push({ x: newX, y: newY });
             }
           }
         });
+
         return moves;
       }
 
+      /**
+       * Verifica si un peón ha llegado a la última fila y lo promociona a reina.
+       * El peón blanco se promociona en la fila 0 (al final del tablero), y el peón negro en la fila 7.
+       * @param {number} x - Posición horizontal de la casilla donde se encuentra el peón.
+       * @param {number} y - Posición vertical de la casilla donde se encuentra el peón.
+       */
       function checkPromotion(x, y) {
         const piece = board[y][x];
+
+        // Verifica si el peón blanco ha llegado a la fila 0 (promociona a reina blanca)
         if (piece === "P" && y === 0) {
           board[y][x] = "Q"; // Promociona peón blanco a reina
-        } else if (piece === "p" && y === 7) {
+        }
+        // Verifica si el peón negro ha llegado a la fila 7 (promociona a reina negra)
+        else if (piece === "p" && y === 7) {
           board[y][x] = "q"; // Promociona peón negro a reina
         }
       }
 
       function handleSquareClick(x, y) {
-        const piece = board[y][x];
+        const piece = board[y][x]; // Obtiene la pieza en la casilla seleccionada.
 
+        // Si hay una pieza seleccionada
         if (selectedPiece) {
+          // Verifica si el movimiento es válido
           const isMoveValid = validMoves.some(
             (move) => move.x === x && move.y === y
           );
@@ -342,53 +585,61 @@
           if (isMoveValid) {
             const fromX = selectedPiece.x;
             const fromY = selectedPiece.y;
-            const movingPiece = board[fromY][fromX];
+            const movingPiece = board[fromY][fromX]; // La pieza que se mueve.
 
-            // Registrar el movimiento en el historial
+            // Registrar el movimiento en el historial (función no proporcionada).
             addMoveToHistory(fromX, fromY, x, y, movingPiece);
 
-            // Verificamos si la pieza capturada es un rey
+            // Verifica si la pieza capturada es un rey
             if (board[y][x] && board[y][x].toLowerCase() === "k") {
               alert(`${turn === "white" ? "Black" : "White"} wins!`);
-              location.reload(); // Recarga la página para reiniciar
+              location.reload(); // Recarga la página para reiniciar el juego.
               return;
             }
 
+            // Mueve la pieza a la nueva casilla
             board[y][x] = movingPiece;
-            board[fromY][fromX] = null;
+            board[fromY][fromX] = null; // Vacía la casilla original.
 
-            // Promoción de peón
+            // Verifica si el peón debe ser promovido
             if (
               (movingPiece === "P" && y === 0) ||
               (movingPiece === "p" && y === 7)
             ) {
-              board[y][x] = movingPiece === "P" ? "Q" : "q";
+              board[y][x] = movingPiece === "P" ? "Q" : "q"; // Promociona el peón a reina.
             }
 
+            // Reinicia la selección de la pieza y las jugadas válidas.
             selectedPiece = null;
             validMoves = [];
+
+            // Cambia el turno
             turn = turn === "white" ? "black" : "white";
           } else {
+            // Si el movimiento no es válido, deselecciona la pieza
             selectedPiece = null;
             validMoves = [];
           }
-        } else if (
+        }
+        // Si no hay una pieza seleccionada y la casilla contiene una pieza del color del jugador actual
+        else if (
           piece &&
           (turn === "white") === (piece === piece.toUpperCase())
         ) {
-          selectedPiece = { x, y };
-          validMoves = getValidMoves(piece, x, y);
+          selectedPiece = { x, y }; // Selecciona la pieza.
+          validMoves = getValidMoves(piece, x, y); // Obtiene los movimientos válidos de la pieza.
         }
 
+        // Vuelve a renderizar el tablero después de hacer el movimiento.
         renderBoard();
       }
 
       function resetGame() {
-        board = parseFEN(initialFEN);
-        selectedPiece = null;
-        validMoves = [];
-        turn = "white";
-        renderBoard();
+        board = parseFEN(initialFEN); // Establece el tablero a su estado inicial usando la notación FEN.
+        selectedPiece = null; // Deselecciona cualquier pieza que esté seleccionada.
+        validMoves = []; // Borra las jugadas válidas almacenadas.
+        turn = "white"; // Establece el turno a "white" (blanco).
+        renderBoard(); // Vuelve a renderizar el tablero con el estado actualizado.
       }
 
       board = parseFEN(initialFEN);
